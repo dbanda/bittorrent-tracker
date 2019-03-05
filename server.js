@@ -436,7 +436,6 @@ class Server extends EventEmitter {
   onWebSocketConnection (socket, opts = {}) {
     opts.trustProxy = opts.trustProxy || this._trustProxy
 
-<<<<<<< HEAD
     socket.peerId = null // as hex
     socket.infoHashes = [] // swarms that this socket is participating in
     socket.onSend = err => {
@@ -447,59 +446,6 @@ class Server extends EventEmitter {
       this._onWebSocketRequest(socket, opts, params)
     }
     socket.on('message', socket.onMessageBound)
-=======
-function utf8to16(str) {
-    var out, i, len, c;
-    var char2, char3;
-
-    out = "";
-    len = str.length;
-    i = 0;
-    while(i < len) {
-  c = str.charCodeAt(i++);
-  switch(c >> 4)
-  { 
-    case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7:
-      // 0xxxxxxx
-      out += str.charAt(i-1);
-      break;
-    case 12: case 13:
-      // 110x xxxx   10xx xxxx
-      char2 = str.charCodeAt(i++);
-      out += String.fromCharCode(((c & 0x1F) << 6) | (char2 & 0x3F));
-      break;
-    case 14:
-      // 1110 xxxx  10xx xxxx  10xx xxxx
-      char2 = str.charCodeAt(i++);
-      char3 = str.charCodeAt(i++);
-      out += String.fromCharCode(((c & 0x0F) << 12) |
-             ((char2 & 0x3F) << 6) |
-             ((char3 & 0x3F) << 0));
-      break;
-  }
-    }
-
-    return out;
-}
-
-Server.prototype._onWebSocketRequest = function (socket, opts, params) {
-  var self = this
-  console.log("params: ", JSON.stringify(params))
-  try {
-    if (JSON.parse(params).torrent){
-        debug("got torrent: ")
-        peers.forEach(function (peer, i) {
-          peer.socket.send(JSON.stringify(params), peer.socket.onSend)
-        })
-        return
-    }
-    
-    params = parseWebSocketRequest(socket, opts, params)
-  } catch (err) {
-    socket.send(JSON.stringify({
-      'failure reason': err.message
-    }), socket.onSend)
->>>>>>> 001f51e... changes
 
     socket.onErrorBound = err => {
       this._onWebSocketError(socket, err)
@@ -512,17 +458,10 @@ Server.prototype._onWebSocketRequest = function (socket, opts, params) {
     socket.on('close', socket.onCloseBound)
   }
 
-<<<<<<< HEAD
   _onWebSocketRequest (socket, opts, params) {
     try {
       params = parseWebSocketRequest(socket, opts, params)
     } catch (err) {
-=======
-  self._onRequest(params, function (err, response) {
-    //console.log("params:", params)
-    if (self.destroyed || socket.destroyed) return
-    if (err) {
->>>>>>> 001f51e... changes
       socket.send(JSON.stringify({
         'failure reason': err.message
       }), socket.onSend)
@@ -535,7 +474,6 @@ Server.prototype._onWebSocketRequest = function (socket, opts, params) {
 
     if (!socket.peerId) socket.peerId = params.peer_id // as hex
 
-<<<<<<< HEAD
     this._onRequest(params, (err, response) => {
       if (this.destroyed || socket.destroyed) return
       if (err) {
@@ -544,13 +482,6 @@ Server.prototype._onWebSocketRequest = function (socket, opts, params) {
           'failure reason': err.message,
           info_hash: common.hexToBinary(params.info_hash)
         }), socket.onSend)
-=======
-    var peers
-    if (response.action === 'announce') {
-      peers = response.peers
-      delete response.peers
-      console.log("params hash: " + params.info_hash)
->>>>>>> 001f51e... changes
 
         this.emit('warning', err)
         return
@@ -563,123 +494,107 @@ Server.prototype._onWebSocketRequest = function (socket, opts, params) {
         peers = response.peers
         delete response.peers
 
-<<<<<<< HEAD
         if (!socket.infoHashes.includes(params.info_hash)) {
           socket.infoHashes.push(params.info_hash)
         }
 
         response.info_hash = common.hexToBinary(params.info_hash)
-=======
-
-    if (Array.isArray(params.offers)) {
-      debug('got %s offers from %s', params.offers.length, params.peer_id)
-      debug('got %s peers from swarm %s', peers.length, params.info_hash)
-      peers.forEach(function (peer, i) {
-        peer.socket.send(JSON.stringify({
-          action: 'announce',
-          offer: params.offers[i].offer,
-          offer_id: params.offers[i].offer_id,
-          peer_id: common.hexToBinary(params.peer_id),
-          info_hash: common.hexToBinary(params.info_hash)
-        }), peer.socket.onSend)
-        debug('sent offer to %s from %s', peer.peerId, params.peer_id)
-      })
-    }
-
-
-      //add trickler support
-    if (params.candidate && params.peer_id){
-      debug("got candidate from %s to %s", params.peer_id, params.to_peer_id)
-      debug("peers length %s",peers.length)
-      debug('got %s peers from swarm %s', peers.length, params.info_hash)
-      self.getSwarm(params.info_hash, function (err, swarm) {
-        if (self.destroyed) return
-        if (err) return self.emit('warning', err)
-        if (!swarm) {
-          return self.emit('warning', new Error('no swarm with that `info_hash`'))
-        }
-        // Mark the destination peer as recently used in cache
-        var toPeer = swarm.peers.get(params.to_peer_id)
-        if (!toPeer) {
-          return self.emit('warning', new Error('no peer with that `to_peer_id`'))
-        }
-
-        toPeer.socket.send(JSON.stringify({
-          action: 'announce',
-          candidate: params.candidate,
-          offer_id: params.offer_id,
-          peer_id: common.hexToBinary(params.peer_id),
-          info_hash: common.hexToBinary(params.info_hash)
-        }), toPeer.socket.onSend)
-        debug('sent candidate to %s from %s', toPeer.peerId, params.peer_id)
-
-        done()
-      })
-
-    }else if (params.answer) {
-      debug('got answer %s from %s', JSON.stringify(params.answer), params.peer_id)
->>>>>>> 001f51e... changes
 
         // WebSocket tracker should have a shorter interval – default: 2 minutes
         response.interval = Math.ceil(this.intervalMs / 1000 / 5)
       }
 
-      // Skip sending update back for 'answer' announce messages – not needed
-      if (!params.answer) {
-        socket.send(JSON.stringify(response), socket.onSend)
-        debug('sent response %s to %s', JSON.stringify(response), params.peer_id)
-      }
-
-      if (Array.isArray(params.offers)) {
-        debug('got %s offers from %s', params.offers.length, params.peer_id)
+      // add trickler support
+      if (params.candidate && params.peer_id) {
+        debug('got candidate from %s to %s', params.peer_id, params.to_peer_id)
+        debug('peers length %s', peers.length)
         debug('got %s peers from swarm %s', peers.length, params.info_hash)
-        peers.forEach((peer, i) => {
-          peer.socket.send(JSON.stringify({
-            action: 'announce',
-            offer: params.offers[i].offer,
-            offer_id: params.offers[i].offer_id,
-            peer_id: common.hexToBinary(params.peer_id),
-            info_hash: common.hexToBinary(params.info_hash)
-          }), peer.socket.onSend)
-          debug('sent offer to %s from %s', peer.peerId, params.peer_id)
-        })
-      }
-
-      const done = () => {
-        // emit event once the announce is fully "processed"
-        if (params.action === common.ACTIONS.ANNOUNCE) {
-          this.emit(common.EVENT_NAMES[params.event], params.peer_id, params)
-        }
-      }
-
-      if (params.answer) {
-        debug('got answer %s from %s', JSON.stringify(params.answer), params.peer_id)
-
-        this.getSwarm(params.info_hash, (err, swarm) => {
+        this.getSwarm(params.info_hash, function (err, swarm) {
           if (this.destroyed) return
           if (err) return this.emit('warning', err)
           if (!swarm) {
             return this.emit('warning', new Error('no swarm with that `info_hash`'))
           }
           // Mark the destination peer as recently used in cache
-          const toPeer = swarm.peers.get(params.to_peer_id)
+          var toPeer = swarm.peers.get(params.to_peer_id)
           if (!toPeer) {
             return this.emit('warning', new Error('no peer with that `to_peer_id`'))
           }
 
           toPeer.socket.send(JSON.stringify({
             action: 'announce',
-            answer: params.answer,
+            candidate: params.candidate,
             offer_id: params.offer_id,
             peer_id: common.hexToBinary(params.peer_id),
             info_hash: common.hexToBinary(params.info_hash)
           }), toPeer.socket.onSend)
-          debug('sent answer to %s from %s', toPeer.peerId, params.peer_id)
-
+          debug('sent candidate to %s from %s', toPeer.peerId, params.peer_id)
+          const done = () => {
+            // emit event once the announce is fully "processed"
+            if (params.action === common.ACTIONS.ANNOUNCE) {
+              this.emit(common.EVENT_NAMES[params.event], params.peer_id, params)
+            }
+          }
           done()
         })
       } else {
-        done()
+        // Skip sending update back for 'answer' announce messages – not needed
+        if (!params.answer) {
+          socket.send(JSON.stringify(response), socket.onSend)
+          debug('sent response %s to %s', JSON.stringify(response), params.peer_id)
+        }
+
+        if (Array.isArray(params.offers)) {
+          debug('got %s offers from %s', params.offers.length, params.peer_id)
+          debug('got %s peers from swarm %s', peers.length, params.info_hash)
+          peers.forEach((peer, i) => {
+            peer.socket.send(JSON.stringify({
+              action: 'announce',
+              offer: params.offers[i].offer,
+              offer_id: params.offers[i].offer_id,
+              peer_id: common.hexToBinary(params.peer_id),
+              info_hash: common.hexToBinary(params.info_hash)
+            }), peer.socket.onSend)
+            debug('sent offer to %s from %s', peer.peerId, params.peer_id)
+          })
+        }
+
+        const done = () => {
+          // emit event once the announce is fully "processed"
+          if (params.action === common.ACTIONS.ANNOUNCE) {
+            this.emit(common.EVENT_NAMES[params.event], params.peer_id, params)
+          }
+        }
+
+        if (params.answer) {
+          debug('got answer %s from %s', JSON.stringify(params.answer), params.peer_id)
+
+          this.getSwarm(params.info_hash, (err, swarm) => {
+            if (this.destroyed) return
+            if (err) return this.emit('warning', err)
+            if (!swarm) {
+              return this.emit('warning', new Error('no swarm with that `info_hash`'))
+            }
+            // Mark the destination peer as recently used in cache
+            const toPeer = swarm.peers.get(params.to_peer_id)
+            if (!toPeer) {
+              return this.emit('warning', new Error('no peer with that `to_peer_id`'))
+            }
+
+            toPeer.socket.send(JSON.stringify({
+              action: 'announce',
+              answer: params.answer,
+              offer_id: params.offer_id,
+              peer_id: common.hexToBinary(params.peer_id),
+              info_hash: common.hexToBinary(params.info_hash)
+            }), toPeer.socket.onSend)
+            debug('sent answer to %s from %s', toPeer.peerId, params.peer_id)
+
+            done()
+          })
+        } else {
+          done()
+        }
       }
     })
   }
