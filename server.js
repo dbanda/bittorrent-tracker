@@ -509,7 +509,7 @@ class Server extends EventEmitter {
         debug('got candidate from %s to %s', params.peer_id, params.to_peer_id)
         debug('peers length %s', peers.length)
         debug('got %s peers from swarm %s', peers.length, params.info_hash)
-        this.getSwarm(params.info_hash, function (err, swarm) {
+        this.getSwarm(params.info_hash, (err, swarm) => {
           if (this.destroyed) return
           if (err) return this.emit('warning', err)
           if (!swarm) {
